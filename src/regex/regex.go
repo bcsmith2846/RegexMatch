@@ -11,7 +11,7 @@ import(
 
 //The struct type of the transition lookup
 type transition struct {
-	id int // -1, end
+	id int 
 	trans string
 }
 
