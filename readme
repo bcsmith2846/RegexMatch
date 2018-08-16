@@ -1,0 +1,18 @@
+I have implemeted the regex matcher using a finite state machine (FSM)
+Using a FSM came about after I created a recursive grammar parser that was really slow at larger inputs
+I remered creating a syntax parser in some programming language theory classes, and leveraged that experience here
+The FSM was faster, but I didn't like the O(2^n) worst/average case runtime.
+So, I allowed the FSM to be in multiple states at once, cutting the runtime down to O(n) worst/average case
+
+To speed this up even more go's goroutine functons could be leveraged.
+First, each line could be in a goroutine. With the file being outside and a worker pool being created
+The worker pool would be an arbiter and allow for the line numbers to be leveraged.
+Next, I would add the FSM parsing into a goroutine. Each move to a new character in the outermost parse loop would be a new goroutine.
+Doing this, one could use channels to pass a successful parse back up the chain.
+
+Usage:
+    ./regex <filename> 'regex'
+
+Compiled for linux x86_64 arch.
+I have renamed the binary for convience.
+
