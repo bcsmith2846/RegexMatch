@@ -237,13 +237,28 @@ type node struct {
 	n1 *node
 	n2 *node
 }
+//Helper method to remove nils from a list slice
+func removeNil(list []*node) []*node{
+	if len(list) == 1 && list[0] == nil {
+		return list[0:0]
+	}
+	for i := 0; i < len(list); i++ {
+		if list[i] == nil {
+			list = append(list[:i],list[i+1:]...)
+			i--
+		}
+	}
+	return list
+}
 
+//Special constants (out of ASCII range)
 const END_NODE = 300
 const SPLIT_NODE = 301
 
 //Takes a tokenized list of the regex grammar and returns a pointer to the starting node of the FSM
 func createFsmV2(pieces []string) *node {
 	
+	//Scan the tokens to find out how many nodes we will need
 	size := 0
 	for _, v:= range pieces{
 		if len(v) < 2 {
@@ -252,9 +267,11 @@ func createFsmV2(pieces []string) *node {
 			size += 2
 		}
 	}
+	//Initialize the slice for the nodes
 	ref := make([]node,size+1)
 	piece := 0
 
+	//Set up the nodes
 	for i := 0; i < len(ref); {
 		//Setup the end node
 		if i == len(ref) - 1 {
@@ -275,8 +292,8 @@ func createFsmV2(pieces []string) *node {
 				ref[i].trans = rune(pieces[piece][0])
 				ref[i].n1 = &ref[i+1]
 
+				//A SPLIT_NODE is a special non-consuming node that allows us to branch
 				ref[i+1].trans = SPLIT_NODE
-
 				//Lazy parsing, so we want to look at the next nodes first
 				ref[i+1].n1 = &ref[i]
 				ref[i+1].n2 = &ref[i+2]
@@ -297,83 +314,79 @@ func createFsmV2(pieces []string) *node {
 		//Next piece
 		piece++
 	}
-	log.Println(ref)
+	//Return the reference to the head of the array
 	return &ref[0]
 }
 
-func removeNil(list []*node) []*node{
-	if len(list) == 1 && list[0] == nil {
-		log.Println("test")
-		return list[0:0]
-		log.Println(list)
-	}
-	for i := 0; i < len(list); i++ {
-		if list[i] == nil {
-			list = append(list[:i],list[i+1:]...)
-			i--
-		}
-	}
-	return list
-}
 
 //Takes a regex string and a search strings and returns all of the matches of regex in match
 func parseV2(regex string, match string) ([]string, []int) {
+	//Get the ref of the start of FSM
 	fsmStart := createFsmV2(splitString(regex))
-	log.Println(*fsmStart)
-	
+	//Create return variables	
 	retString := make([]string,0)
 	retIndex := make([]int,0)
+	//Loop over starting characters
 	for start := 0; start < len(match); start++ {
-
+		//Checker variables
 		done := false
 		found := false
+		//The list of the states the machine is in
 		currentStates := make([]*node, 0)
 		currentStates = append(currentStates, fsmStart)
+		//Loop over the rest of the message looking for a match
 		for let := start; let < len(match) && !done; {
-			if len(currentStates) == 0 {
-				done = true
-			}
+			//Loop over the current states of the machine
 			for state := 0; state < len(currentStates) && !done; {
+				//Remove any states that are gone
 				currentStates = removeNil(currentStates)
+				//Nothing left to parse
 				if len(currentStates) == 0 {
 					done = true
 					continue
 				}
-				log.Println(currentStates,state) 
+				//Peek the next character
 				eat := (*currentStates[state]).trans
+				//End node -- we've found a match
 				if eat == END_NODE {
 					done = true
 					found = true
 					continue
+				//Split node -- add some branches to the execution
 				} else if eat == SPLIT_NODE {
-					
 					currentStates = append(currentStates,(*currentStates[state]).n1)
 					currentStates = append(currentStates,(*currentStates[state]).n2)
 					currentStates[state] = nil
+				//There's an actual character in here
 				} else {
+					//We're outside of the bounds of the string
 					if let == len(match) {
 						break
 					}
-
+					//The current character to check
 					check := rune(match[let])
-					log.Println("checking",string(check),"against",string(eat),eat,*currentStates[state])
-					let++
+					//If our character doesn't match
 					if !(eat == '.' || eat == check) {
+						//Remove this path
 						currentStates[state] = nil
 						continue
+					//If it does
 					} else {
+						//Keep going and advance the character
 						currentStates[state] = (*currentStates[state]).n1
+						let++
 						
 					}
 				}
 			}
+			//Didn't find anything
 			if done && !found {
 				break
+			//If we've found a string add it to the return variables
 			} else if found {
 				retString = append(retString,match[start:let])
 				retIndex = append(retIndex,start)
 				start = let-1
-
 				break
 			}
 

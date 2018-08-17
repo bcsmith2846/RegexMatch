@@ -12,7 +12,14 @@ Doing this, one could use channels to pass a successful parse back up the chain.
 
 Usage:
     ./regex <filename> 'regex'
+    ./regex <(echo 'sometext') 'regex'
 
 Compiled for linux x86_64 arch.
 I have renamed the binary for convience.
+
+V2 notes:
+- Added clearer transition logic
+- The algorithm isn't greedy or lazy, but it's fast
+- Leveraged more of Go's features
+- Got rid of a bug or two
 
