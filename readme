@@ -19,7 +19,5 @@ I have renamed the binary for convience.
 
 V2 notes:
 - Added clearer transition logic
-- The algorithm isn't greedy or lazy, but it's fast
 - Leveraged more of Go's features
 - Got rid of a bug or two
-
