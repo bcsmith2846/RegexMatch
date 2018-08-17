@@ -365,6 +365,7 @@ func parseV2(regex string, match string) ([]string, []int) {
 					}
 					//The current character to check
 					check := rune(match[let])
+					let++
 					//If our character doesn't match
 					if !(eat == '.' || eat == check) {
 						//Remove this path
@@ -374,7 +375,6 @@ func parseV2(regex string, match string) ([]string, []int) {
 					} else {
 						//Keep going and advance the character
 						currentStates[state] = (*currentStates[state]).n1
-						let++
 						
 					}
 				}
