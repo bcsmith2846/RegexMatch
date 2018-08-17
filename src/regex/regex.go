@@ -238,25 +238,78 @@ type node struct {
 	n2 *node
 }
 
+const END_NODE = 300
+const SPLIT_NODE = 301
+
 //Takes a tokenized list of the regex grammar and returns a pointer to the starting node of the FSM
 func createFsmV2(pieces []string) *node {
 	start := &node{
-		trans: ''
-		n1: nil
-		n2: nil
+		n1: nil,
+		n2: nil,
+		trans: 0,
 	}
-	for i, piece := range pieces {
-		//If we have no modifier
-		if len(piece) == 1 {
-			
+	size := 0
+	for _, v:= range pieces{
+		if len(v) < 2 {
+			size += 1
+		} else {
+			size += 2
 		}
 	}
+	ref := make([]node,size+1)
+	piece := 0
+
+	for i := 0; i < len(ref); {
+		//Setup the end node
+		if i == len(ref) - 1 {
+			ref[i].trans = END_NODE
+			i++
+			continue
+		}
+		//No modifier
+		if len(pieces[piece]) < 2 {
+			//Setup our transition
+			ref[i].trans = rune(pieces[piece][0])
+			ref[i].n1 = &ref[i+1]
+			//Next node
+			i++
+		} else {
+			//Make our nodes for +
+			if pieces[piece][1] == '+' {
+				ref[i].trans = rune(pieces[piece][0])
+				ref[i].n1 = &ref[i+1]
+
+				ref[i+1].trans = SPLIT_NODE
+				ref[i+1].n1 = &ref[i]
+				ref[i+1].n2 = &ref[i+2]
+			//Make our noes for *
+			} else if pieces[piece][1] == '*' {
+				ref[i].trans = SPLIT_NODE
+				ref[i].n1 = &ref[i+1]
+				ref[i].n2 = &ref[i+2]
+
+				ref[i+1].trans = rune(pieces[piece][0])
+				ref[i+1].n1 = &ref[i]
+			}
+			//Done with these two nodes
+			i += 2
+		}
+
+		//Next piece
+		piece++
+	}
+
+	log.Println(ref)
+
+
+
+	
 	return start
 }
 
 //Takes a regex string and a search strings and returns all of the matches of regex in match
 func parseV2(regex string, match string) ([]string, []int) {
-	_ := createFsm(splitString(regex))
+	_ = createFsmV2(splitString(regex))
 	return make([]string,0),make([]int,0)
 }
 
