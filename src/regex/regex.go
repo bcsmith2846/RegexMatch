@@ -15,6 +15,7 @@ type transition struct {
 	trans string
 }
 
+
 // Remove from s at index i
 func remove(s []int, i int) []int {
     return append(s[:i],s[i+1:]...)
@@ -226,6 +227,39 @@ func parse(regex string, match string) ([]string,[]int){
 	return matches,index
 }
 
+
+//Node struct to be used in v2
+type node struct {
+	//The character to transition on
+	trans rune
+	//The pointers to the next nodes. If n2 isn't nill we branch
+	//If n1 and n2 are nil, we're done
+	n1 *node
+	n2 *node
+}
+
+//Takes a tokenized list of the regex grammar and returns a pointer to the starting node of the FSM
+func createFsmV2(pieces []string) *node {
+	start := &node{
+		trans: ''
+		n1: nil
+		n2: nil
+	}
+	for i, piece := range pieces {
+		//If we have no modifier
+		if len(piece) == 1 {
+			
+		}
+	}
+	return start
+}
+
+//Takes a regex string and a search strings and returns all of the matches of regex in match
+func parseV2(regex string, match string) ([]string, []int) {
+	_ := createFsm(splitString(regex))
+	return make([]string,0),make([]int,0)
+}
+
 //The Match function is visiable outside the package and is the way to match a regex to a file
 //This function could be spead up slightly more by putting each lines parsing in a goroutiene
 //To make the goroutine work, one would have to use a worker pool and a routiene dispacher.
@@ -246,7 +280,7 @@ func Match(file *os.File,regex string) string{
 		lineNo++
 		//Read in the line and parse the expression then add the results to our return variable.
 		line := scan.Text()
-		p,in:=parse(regex,line)
+		p,in:=parseV2(regex,line)
 		for i,v := range p {
 			ret = ret + fmt.Sprintf("%s matches (line: %d, index: %d)\n",v,lineNo,in[i])
 		} 
