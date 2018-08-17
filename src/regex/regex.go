@@ -243,11 +243,7 @@ const SPLIT_NODE = 301
 
 //Takes a tokenized list of the regex grammar and returns a pointer to the starting node of the FSM
 func createFsmV2(pieces []string) *node {
-	start := &node{
-		n1: nil,
-		n2: nil,
-		trans: 0,
-	}
+	
 	size := 0
 	for _, v:= range pieces{
 		if len(v) < 2 {
@@ -280,11 +276,14 @@ func createFsmV2(pieces []string) *node {
 				ref[i].n1 = &ref[i+1]
 
 				ref[i+1].trans = SPLIT_NODE
+
+				//Lazy parsing, so we want to look at the next nodes first
 				ref[i+1].n1 = &ref[i]
 				ref[i+1].n2 = &ref[i+2]
 			//Make our noes for *
 			} else if pieces[piece][1] == '*' {
 				ref[i].trans = SPLIT_NODE
+				//Lazy parsing, we want to look to the next nodes before looping
 				ref[i].n1 = &ref[i+1]
 				ref[i].n2 = &ref[i+2]
 
@@ -298,19 +297,89 @@ func createFsmV2(pieces []string) *node {
 		//Next piece
 		piece++
 	}
-
 	log.Println(ref)
+	return &ref[0]
+}
 
-
-
-	
-	return start
+func removeNil(list []*node) []*node{
+	if len(list) == 1 && list[0] == nil {
+		log.Println("test")
+		return list[0:0]
+		log.Println(list)
+	}
+	for i := 0; i < len(list); i++ {
+		if list[i] == nil {
+			list = append(list[:i],list[i+1:]...)
+			i--
+		}
+	}
+	return list
 }
 
 //Takes a regex string and a search strings and returns all of the matches of regex in match
 func parseV2(regex string, match string) ([]string, []int) {
-	_ = createFsmV2(splitString(regex))
-	return make([]string,0),make([]int,0)
+	fsmStart := createFsmV2(splitString(regex))
+	log.Println(*fsmStart)
+	
+	retString := make([]string,0)
+	retIndex := make([]int,0)
+	for start := 0; start < len(match); start++ {
+
+		done := false
+		found := false
+		currentStates := make([]*node, 0)
+		currentStates = append(currentStates, fsmStart)
+		for let := start; let < len(match) && !done; {
+			if len(currentStates) == 0 {
+				done = true
+			}
+			for state := 0; state < len(currentStates) && !done; {
+				currentStates = removeNil(currentStates)
+				if len(currentStates) == 0 {
+					done = true
+					continue
+				}
+				log.Println(currentStates,state) 
+				eat := (*currentStates[state]).trans
+				if eat == END_NODE {
+					done = true
+					found = true
+					continue
+				} else if eat == SPLIT_NODE {
+					
+					currentStates = append(currentStates,(*currentStates[state]).n1)
+					currentStates = append(currentStates,(*currentStates[state]).n2)
+					currentStates[state] = nil
+				} else {
+					if let == len(match) {
+						break
+					}
+
+					check := rune(match[let])
+					log.Println("checking",string(check),"against",string(eat),eat,*currentStates[state])
+					let++
+					if !(eat == '.' || eat == check) {
+						currentStates[state] = nil
+						continue
+					} else {
+						currentStates[state] = (*currentStates[state]).n1
+						
+					}
+				}
+			}
+			if done && !found {
+				break
+			} else if found {
+				retString = append(retString,match[start:let])
+				retIndex = append(retIndex,start)
+				start = let-1
+
+				break
+			}
+
+		}
+	}
+	return retString,retIndex
 }
 
 //The Match function is visiable outside the package and is the way to match a regex to a file
