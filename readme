@@ -25,3 +25,7 @@ V2 notes:
 After some testing and static code analysis I've noticed the code I have written is correct for all non ambigious  matches.
 If the match is ambigious, a correct result will be displayed. The algorithm is deterministic, but which solution is chosen depends on how the FSM is compiled. 
 For matching that is very specific on how ambigious matches are handled, a O(2^n) runtime is required.
+
+A more Go like version could be created by creating an interface for nodes, type aliases for each node type, 
+and object methods for each node type that advance to the next character correctly. 
+This may be implemented Friday 8/17 in the evening if I haven't heard anything back about the code.
